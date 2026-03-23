@@ -13,16 +13,35 @@ def show():
         "X-RapidAPI-Host": "cricbuzz-cricket.p.rapidapi.com"
     }
 
-    url = "https://cricbuzz-cricket.p.rapidapi.com/matches/v1/live"
+    url_live = "https://cricbuzz-cricket.p.rapidapi.com/matches/v1/live"
+    url_recent = "https://cricbuzz-cricket.p.rapidapi.com/matches/v1/recent"
 
-    response = requests.get(url, headers=headers)
-    data = response.json()
+    response = requests.get(url_live, headers=headers)
+
+    # Safe JSON handling
+    try:
+        data = response.json()
+    except:
+        data = {}
+
+    # 🔥 CONDITION: if live is empty → use recent
+    if "typeMatches" not in data or len(data.get("typeMatches", [])) == 0:
+        st.warning("No live matches found. Showing recent matches instead.")
+
+        response = requests.get(url_recent, headers=headers)
+
+        try:
+            data = response.json()
+        except:
+            st.error("Failed to fetch recent matches")
+            st.write(response.text)
+            return
 
     match_names = []
     match_details = {}
 
     # Extract matches
-    for typeMatch in data["typeMatches"]:
+    for typeMatch in data.get("typeMatches", []):
 
         for seriesMatch in typeMatch["seriesMatches"]:
 
